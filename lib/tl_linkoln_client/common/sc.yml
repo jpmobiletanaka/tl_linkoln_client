@@ -1,0 +1,39 @@
+production:
+  tl_linkoln_client:
+    room_type_groups:
+      fetch_client:
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetRoomTypeMasterSearchService?wsdl
+    plan_groups:
+      fetch_client:
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetPlanMasterSearchService?wsdl
+    prices:
+      fetch_client:
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/PlanSaleSituationSearchService?wsdl
+      update_client:
+        # wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetPriceAdjustmentService?wsdl
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetPriceBulkAdjustmentService?wsdl
+    inventory:
+      fetch_client:
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetStockSearchService?wsdl
+      update_client:
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetStockAdjustmentService?wsdl
+
+test:
+  tl_linkoln_client:
+    room_type_groups:
+      fetch_client:
+        wsdl: https://test472.tl-lincoln.net/pmsservice/V1/NetRoomTypeMasterSearchService?wsdl
+    plan_groups:
+      fetch_client:
+        wsdl: https://test472.tl-lincoln.net/pmsservice/V1/NetPlanMasterSearchService?wsdl
+    prices:
+      fetch_client:
+        wsdl: https://test472.tl-lincoln.net/pmsservice/V1/PlanSaleSituationSearchService?wsdl
+      update_client:
+        # wsdl: https://test472.tl-lincoln.net/pmsservice/V1/NetPriceAdjustmentService?wsdl
+        wsdl: https://test472.tl-lincoln.net/pmsservice/V1/NetPriceBulkAdjustmentService?wsdl
+    inventory:
+      fetch_client:
+        wsdl: https://test472.tl-lincoln.net/pmsservice/V1/NetStockSearchService?wsdl
+      update_client:
+        wsdl: https://test472.tl-lincoln.net/pmsservice/V1/NetStockAdjustmentService?wsdl
