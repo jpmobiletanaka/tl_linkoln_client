@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TlLinkolnClient
   module Prices
     class UpdateClient < TlLinkolnClient::Client

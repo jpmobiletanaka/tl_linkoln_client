@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TlLinkolnClient
   module Inventory
     class FetchClient < TlLinkolnClient::Client

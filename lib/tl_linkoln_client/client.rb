@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TlLinkolnClient
   class Client < TlLinkolnClient::Common::Client
     SOCKET_ERROR_DELAY = 60

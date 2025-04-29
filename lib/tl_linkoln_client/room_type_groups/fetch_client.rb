@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TlLinkolnClient
   module RoomTypeGroups
     class FetchClient < TlLinkolnClient::Client

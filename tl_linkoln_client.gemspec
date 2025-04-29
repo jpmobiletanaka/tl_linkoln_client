@@ -14,9 +14,12 @@ Gem::Specification.new do |spec|
   spec.files         = Dir["lib/**/*.rb"]
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "savon"
-  spec.add_dependency "nokogiri"
-  spec.add_dependency "ox"
+  spec.required_ruby_version = '>= 2.7.0'
+
   spec.add_dependency "activesupport"
   spec.add_dependency "excon"
+  spec.add_dependency "nokogiri"
+  spec.add_dependency "ox"
+  spec.add_dependency "savon"
+  spec.metadata['rubygems_mfa_required'] = 'true'
 end

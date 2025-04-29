@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module TlLinkolnClient
   module PlanGroups
     class FetchClient < TlLinkolnClient::Client
