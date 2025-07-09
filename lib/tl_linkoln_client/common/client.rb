@@ -9,7 +9,8 @@ module TlLinkolnClient
 
       def initialize(sc_account = nil)
         @sc_account = sc_account
-        @config     = YAML.safe_load(File.read(File.join(__dir__, 'sc.yml')))
+        yml_path    = File.expand_path("../../config/urls.yml", __dir__)
+        @config     = YAML.safe_load(File.read(yml_path))
       end
 
       def call(params = nil)

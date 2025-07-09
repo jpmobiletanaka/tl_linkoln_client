@@ -1,0 +1,53 @@
+*.swp
+*.swo
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Bundler
+/.bundle/
+/vendor/bundle/
+/vendor/cache/
+/.bundle/config
+
+# Ruby
+*.gem
+.yardoc
+_yardoc
+/.yardoc/
+/coverage/
+/doc/
+/pkg/
+/rdoc/
+/log/
+/tmp/
+/.byebug_history
+/.pry_history
+
+# RuboCop
+.rubocop-https?*
+.rubocop_cache/
+
+# Editor config / OS
+*.orig
+tags
+TAGS
+*.log
+
+# Test / CI
+coverage/
+spec/reports/
+test/tmp/
+test/version_tmp/
+/spec/tmp
+/spec/examples.txt
+
+# pry / irb
+.irb_history
+.pry_history
+pry_output.txt
+
+# VSCode / RubyMine / JetBrains
+.vscode/
+.idea/
