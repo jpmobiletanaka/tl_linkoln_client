@@ -19,8 +19,7 @@ production:
         wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetStockAdjustmentService?wsdl
     number_of_price_requests:
       fetch_client:
-        wsdl: https://www.tl-lincoln.net/pmsservice/V1/PriceAdjustmentForNetNumOfAcptablePrcRequest?wsdl
-#      wsdl: https://www.tl-lincoln.net/pmsservice/V1/ priceAdjustmentForNetNumOfAcptablePrcRequest
+        wsdl: https://www.tl-lincoln.net/pmsservice/V1/NetPriceBulkAdjustmentNumOfAcptablePrcCheckService?wsdl
 
 test:
   tl_linkoln_client:
