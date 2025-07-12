@@ -21,7 +21,7 @@ module TlLinkolnClient
     protected
 
     def client
-      @_client ||= Savon::Client.new(wsdl: wsdl, proxy: proxy, read_timeout: TIMEOUT, open_timeout: TIMEOUT)
+      @_client ||= ::Savon::Client.new(wsdl: wsdl, proxy: proxy, read_timeout: TIMEOUT, open_timeout: TIMEOUT)
     end
 
     def proxy
