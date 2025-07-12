@@ -36,7 +36,6 @@ module TlLinkolnClient
 
       def validate!
         @errors = []
-        @errors << 'Invalid Sc::Account' unless sc_account.is_a? ::Sc::Account
         send(:validation) if respond_to?(:validation, true)
         raise TlLinkolnClient::Common::Error, @errors if @errors.present?
       end
