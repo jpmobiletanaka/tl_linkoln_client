@@ -3,7 +3,6 @@
 module TlLinkolnClient
   module NumberOfPriceRequests
     class FetchClient < TlLinkolnClient::Client
-
     end
   end
 end

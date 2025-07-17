@@ -20,7 +20,7 @@ module TlLinkolnClient
       end
 
       def procedure_code
-        return if [params[:start_date], params[:end_date]].any?(&:blank?)
+        return if [ params[:start_date], params[:end_date] ].any?(&:blank?)
         return PROCEDURE_CODE_FOR_PLAN_GROUP if params[:plan_group_code].present?
 
         DEFAULT_PROCEDURE_CODE

@@ -36,10 +36,10 @@ module TlLinkolnClient
       begin
         response = client.call(:execute, message: body_request)
         parse_response_ox(response)
-      rescue Excon::Error::Timeout => e
+      rescue ::Excon::Error::Timeout => e
         log_errors(e, body_request, time)
         raise TlLinkolnClient::Common::Error, e.message
-      rescue Excon::Error::Socket => e
+      rescue ::Excon::Error::Socket => e
         log_errors(e, body_request, time)
         sleep(SOCKET_ERROR_DELAY)
         @retry_count += 1
@@ -57,7 +57,7 @@ module TlLinkolnClient
     end
 
     def parse_response_ox(response)
-      hash = Ox.load(response.to_s, mode: :hash_no_attrs, effort: :auto_define)
+      hash = ::Ox.load(response.to_s, mode: :hash_no_attrs, effort: :auto_define)
       hash.dig(:'S:Envelope', :'S:Body', :'ns2:executeResponse', :return)
     end
 

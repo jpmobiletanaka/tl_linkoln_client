@@ -23,7 +23,7 @@ module TlLinkolnClient
       end
 
       def procedure_code
-        return if [params[:agent_code], params[:room_type_code]].any?(&:blank?)
+        return if [ params[:agent_code], params[:room_type_code] ].any?(&:blank?)
 
         DEFAULT_PROCEDURE_CODE
       end
