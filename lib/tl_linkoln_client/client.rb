@@ -7,6 +7,8 @@ module TlLinkolnClient
     TIMEOUT = 90
     EMPTY_RESPONSE = "E613"
 
+    class TlMaintenanceError < StandardError; end
+
     def wsdl
       return @wsdl if @wsdl.present?
 
@@ -47,7 +49,7 @@ module TlLinkolnClient
         raise e
       rescue StandardError => e
         log_errors(e, body_request, time)
-        raise e
+        raise TlMaintenanceError, "TlMaintenanceError: #{e.message}"
       end
     end
 
