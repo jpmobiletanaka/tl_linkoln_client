@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "tl_linkoln_client"
-  spec.version       = "0.1.5"
+  spec.version       = "0.2.5"
   spec.authors       = [ "Ha Dung" ]
   spec.email         = [ "h-dung@w.metroengines.jp" ]
 
@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 2.7.0'
 
   spec.add_dependency "activesupport"
-  spec.add_dependency "excon", '~> 0.71.0'
+  spec.add_dependency "excon", ">= 1.5.0"
   spec.add_dependency "nokogiri"
   spec.add_dependency "ox"
   spec.add_dependency "savon"
