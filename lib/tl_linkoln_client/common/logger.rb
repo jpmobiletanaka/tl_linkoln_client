@@ -18,8 +18,13 @@ module TlLinkolnClient
 
       def error(error, log_info = {})
         logger.error(
-          params.merge(type: "#{type}_error", status: :error, error: error.message, trace: error.backtrace)
-                .merge(log_info)
+          params.merge(
+            type: "#{type}_error",
+            status: :error,
+            error_class: error.class.name,
+            error: error.message,
+            trace: error.backtrace
+          ).merge(log_info)
         )
       end
 
