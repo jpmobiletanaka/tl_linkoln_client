@@ -65,6 +65,9 @@ module TlLinkolnClient
       begin
         response = client.call(:execute, message: body_request)
         parse_response_ox(response)
+      rescue ::Ox::ParseError => e
+        log_errors(e, body_request, time)
+        raise TlMaintenanceError, e.message
       rescue ::Excon::Error::Socket => e
         log_errors(e, body_request, time)
         @retry_count += 1
