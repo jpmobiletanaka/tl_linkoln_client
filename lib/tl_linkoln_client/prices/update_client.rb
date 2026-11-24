@@ -7,12 +7,12 @@ module TlLinkolnClient
       DEFAULT_SALES_STATUS   = 3
       DEFAULT_PROCEDURE_CODE = 1
 
-      def call(params = nil)
+      def call(params = nil, before_attempt: nil)
         if !Rails.env.production? && test_hotel_ids.exclude?(sc_account.hotel_id)
           raise TlLinkolnClient::Common::Error, 'You can not send prices from non production'
         end
 
-        super(params)
+        super(params, before_attempt: before_attempt)
       end
 
       private

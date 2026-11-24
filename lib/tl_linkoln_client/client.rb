@@ -21,8 +21,11 @@ module TlLinkolnClient
       @config = YAML.safe_load(File.read(yml_path))
     end
 
-    def call(params = nil)
+    # before_attempt: optional callable run right before every SOAP attempt, retries included.
+    # Raising from it aborts the attempt before anything is sent to TL.
+    def call(params = nil, before_attempt: nil)
       @params = params
+      @before_attempt = before_attempt
       validate!
       response = make_response
       data = formatted_response(response)
@@ -63,7 +66,10 @@ module TlLinkolnClient
       @retry_count = 0
       time = Time.current
       begin
-        response = client.call(:execute, message: body_request)
+        # Build the Savon client (may download the WSDL) before the check, so the check is the last step before sending.
+        soap = client
+        @before_attempt&.call
+        response = soap.call(:execute, message: body_request)
         parse_response_ox(response)
       rescue ::Ox::ParseError => e
         log_errors(e, body_request, time)

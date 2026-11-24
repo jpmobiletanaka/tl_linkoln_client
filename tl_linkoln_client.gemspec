@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "tl_linkoln_client"
-  spec.version       = "0.2.7"
+  spec.version       = "1.0.0"
   spec.authors       = [ "Ha Dung" ]
   spec.email         = [ "h-dung@w.metroengines.jp" ]
 
