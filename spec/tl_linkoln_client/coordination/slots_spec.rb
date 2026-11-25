@@ -142,21 +142,6 @@ RSpec.describe TlLinkolnClient::Coordination::Slots do
     described_class.extend_reservation(system_id: system_id, user_id: user_id, owner: by)
   end
 
-  def extend_refresh(by = owner)
-    described_class.extend_refresh(system_id: system_id, user_id: user_id, owner: by)
-  end
-
-  it 'extends the refresh mutex only for its owner and never re-creates it' do
-    expect(extend_refresh).to eq(false) # not held yet
-
-    claim
-    expect(extend_refresh('other')).to eq(false)
-    expect(extend_refresh).to eq(true)
-
-    redis.now_ms += described_class::REFRESH_TTL_MS + 1
-    expect(extend_refresh).to eq(false)
-  end
-
   describe 'keeping a reservation alive' do
     before do
       claim

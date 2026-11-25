@@ -43,12 +43,14 @@ module TlLinkolnClient
 
       def acquire_lock(key, owner, ttl_ms)
         require_owner!(owner)
+        require_positive_ttl!(ttl_ms)
         result = redis_client.set(key, owner.to_s, nx: true, px: ttl_ms.to_i)
         result == true || result == 'OK'
       end
 
       def extend_lock(key, owner, ttl_ms)
         require_owner!(owner)
+        require_positive_ttl!(ttl_ms)
         result = eval_script(EXTEND_IF_OWNER, keys: [ key ], argv: [ owner, ttl_ms.to_i ])
         truthy?(result)
       end
@@ -69,6 +71,10 @@ module TlLinkolnClient
 
       def require_owner!(owner)
         raise ArgumentError, 'owner is blank' if blank?(owner)
+      end
+
+      def require_positive_ttl!(ttl_ms)
+        raise ArgumentError, 'ttl_ms must be positive' unless ttl_ms.to_i.positive?
       end
 
       def blank?(value)

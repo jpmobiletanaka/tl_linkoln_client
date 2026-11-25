@@ -8,21 +8,20 @@ module TlLinkolnClient
     #   i.e. until the request to TL is over. #extend_reservation keeps the reservation alive meanwhile.
     # - #claim_refresh takes the refresh mutex only when the balance is empty and no reservation is in flight,
     #   so a refresh never reads a count that is missing a request TL has not yet seen.
-    #   #extend_refresh keeps the mutex alive while the refresh runs.
     # - #replace_if_empty writes the API number only while the balance is empty and
-    #   the caller still holds the refresh mutex.
+    #   the caller still holds the refresh mutex. The check and the write are one atomic Lua step.
     class Slots < Coordination
-      # Kept alive by a Lease while the refresh runs (see #extend_refresh). Only a dead owner lets it expire,
-      # and then it frees itself after this time. Must be longer than the Lease interval.
-      REFRESH_TTL_MS = 60_000
+      # Held for one NumberOfPriceRequests call, including SOAP timeouts and retries (up to ~260 s).
+      # Nothing renews it. A dead owner frees it after this time.
+      REFRESH_TTL_MS = 300_000
 
       # How long a written balance stays valid. TL's quota window is unknown, so this is a
       # conservative default; pass `ttl_ms:` to #replace_if_empty to override it.
       BALANCE_TTL_MS = 120_000
 
-      # Kept alive by a Lease while the request to TL is in progress (see #extend_reservation).
-      # A reservation whose owner died stops blocking refresh after this time. Must be longer than the Lease interval.
-      INFLIGHT_TTL_MS = 60_000
+      # Covers one request to TL: up to 160 s (10 s open + 90 s read + 60 s socket retry delay) between two
+      # attempts. #extend_reservation runs before each attempt. A dead owner frees it after this time.
+      INFLIGHT_TTL_MS = 240_000
 
       # KEYS[1] - slots balance, KEYS[2] - in-flight reservations (ZSET owner -> expires_at)
       # ARGV[1] - now, ARGV[2] - reservation expires_at, ARGV[3] - owner, ARGV[4] - in-flight key ttl
@@ -158,13 +157,6 @@ module TlLinkolnClient
             argv: [ owner, ttl_ms.to_i, now_ms ]
           )
           truthy?(result)
-        end
-
-        # Keeps the refresh mutex alive for its owner. False when it is no longer held by `owner`;
-        # an expired mutex is never re-created here.
-        def extend_refresh(system_id:, user_id:, owner:, ttl_ms: REFRESH_TTL_MS)
-          require_owner!(owner)
-          extend_lock(mutex_key(system_id, user_id), owner, ttl_ms)
         end
 
         def release_refresh(system_id:, user_id:, owner:)
