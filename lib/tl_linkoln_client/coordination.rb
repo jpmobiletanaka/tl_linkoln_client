@@ -3,7 +3,7 @@
 require 'digest'
 
 module TlLinkolnClient
-  # Shared Redis handle and lock helpers for the four TL-Lincoln coordination tasks.
+  # Shared Redis handle and lock helpers for the three TL-Lincoln coordination tasks.
   # The client is assigned once at boot (`Coordination.redis = ...`).
   # This class never opens a connection and does not read ENV.
   class Coordination
@@ -90,6 +90,5 @@ end
 
 require_relative 'coordination/room_lock'
 require_relative 'coordination/sync_account'
-require_relative 'coordination/hotel_limit'
 require_relative 'coordination/slots'
 require_relative 'coordination/lease'

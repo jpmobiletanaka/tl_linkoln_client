@@ -8,6 +8,7 @@ class FakeRedis
   def initialize
     @strings = {}
     @sets = {}
+    @hashes = {}
     @now_ms = (Time.now.to_f * 1000).to_i
   end
 
@@ -51,12 +52,6 @@ class FakeRedis
       release_if_owner(keys[0], argv[0])
     when coordination::EXTEND_IF_OWNER
       extend_if_owner(keys[0], argv[0], argv[1])
-    when coordination::HotelLimit::ENTER
-      enter_hotel(keys[0], argv[0], argv[1], argv[2], argv[3])
-    when coordination::HotelLimit::EXTEND
-      extend_hotel(keys[0], argv[0], argv[1], argv[2])
-    when coordination::HotelLimit::LEAVE
-      zrem(keys[0], argv[0])
     when coordination::Slots::TAKE
       take_slot(keys[0], keys[1], argv[0], argv[1], argv[2], argv[3])
     when coordination::Slots::CLAIM_REFRESH
@@ -75,6 +70,12 @@ class FakeRedis
       zrem(keys[0], argv[0])
     when coordination::RoomLock::ACQUIRE_FOR_SYNC
       acquire_room_for_sync(keys[0], keys[1], argv[0], argv[1], argv[2])
+    when coordination::SyncAccount::ACQUIRE_SCRIPT
+      sync_acquire(keys[0], keys[1], argv[0], argv[1], argv[2], argv[3], argv[4])
+    when coordination::SyncAccount::EXTEND_SCRIPT
+      sync_extend(keys[0], keys[1], argv[0], argv[1], argv[2], argv[3])
+    when coordination::SyncAccount::RELEASE_SCRIPT
+      sync_release(keys[0], keys[1], argv[0], argv[1])
     else
       raise ArgumentError, 'unknown script'
     end
@@ -96,26 +97,6 @@ class FakeRedis
     return 0 unless get(key) == owner
 
     pexpire(key, ttl_ms)
-  end
-
-  def enter_hotel(key, now, expires_at, limit, member)
-    zremrangebyscore(key, now)
-    if zscore(key, member)
-      zadd(key, expires_at, member)
-      return 1
-    end
-    return 0 if zcard(key) >= limit.to_i
-
-    zadd(key, expires_at, member)
-    1
-  end
-
-  def extend_hotel(key, now, expires_at, member)
-    zremrangebyscore(key, now)
-    return 0 unless zscore(key, member)
-
-    zadd(key, expires_at, member)
-    1
   end
 
   def take_slot(key, inflight, now, expires_at, owner, inflight_ttl_ms)
@@ -175,6 +156,57 @@ class FakeRedis
     return 0 if zcard(wait_key).positive?
 
     set(room_key, owner, nx: true, px: ttl_ms) ? 1 : 0
+  end
+
+  # Ruby stand-ins for SyncAccount's Lua scripts: same arguments, same return codes.
+  def sync_acquire(slots, owners, now, expires_at, limit, login, owner)
+    sync_purge(slots, owners, now)
+    return 0 if hget(owners, login)
+    return -1 if zcard(slots) >= limit.to_i
+
+    hset(owners, login, owner)
+    zadd(slots, expires_at, login)
+    1
+  end
+
+  def sync_extend(slots, owners, now, expires_at, login, owner)
+    sync_purge(slots, owners, now)
+    return 0 unless hget(owners, login) == owner
+
+    zadd(slots, expires_at, login)
+    1
+  end
+
+  def sync_release(slots, owners, login, owner)
+    return 0 unless hget(owners, login) == owner
+
+    hdel(owners, login)
+    zrem(slots, login)
+    1
+  end
+
+  def sync_purge(slots, owners, now)
+    zrangebyscore_upto(slots, now).each { |login| hdel(owners, login) }
+    zremrangebyscore(slots, now)
+  end
+
+  def zrangebyscore_upto(key, now)
+    purge_set(key)
+    (@sets.dig(key, :members) || {}).select { |_member, score| score <= now.to_i }.keys
+  end
+
+  def hget(key, field)
+    @hashes.dig(key, field)
+  end
+
+  def hset(key, field, value)
+    (@hashes[key] ||= {})[field] = value
+    1
+  end
+
+  def hdel(key, field)
+    @hashes[key]&.delete(field)
+    1
   end
 
   def zadd(key, score, member)
