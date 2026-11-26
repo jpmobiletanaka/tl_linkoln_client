@@ -71,7 +71,7 @@ class FakeRedis
     when coordination::RoomLock::ACQUIRE_FOR_SYNC
       acquire_room_for_sync(keys[0], keys[1], argv[0], argv[1], argv[2])
     when coordination::SyncAccount::ACQUIRE_SCRIPT
-      sync_acquire(keys[0], keys[1], argv[0], argv[1], argv[2], argv[3], argv[4])
+      sync_acquire(keys[0], keys[1], keys[2], argv[0], argv[1], argv[2], argv[3], argv[4])
     when coordination::SyncAccount::EXTEND_SCRIPT
       sync_extend(keys[0], keys[1], argv[0], argv[1], argv[2], argv[3])
     when coordination::SyncAccount::RELEASE_SCRIPT
@@ -159,13 +159,14 @@ class FakeRedis
   end
 
   # Ruby stand-ins for SyncAccount's Lua scripts: same arguments, same return codes.
-  def sync_acquire(slots, owners, now, expires_at, limit, login, owner)
+  def sync_acquire(slots, owners, taken, now, expires_at, limit, login, owner)
     sync_purge(slots, owners, now)
     return 0 if hget(owners, login)
     return -1 if zcard(slots) >= limit.to_i
 
     hset(owners, login, owner)
     zadd(slots, expires_at, login)
+    set(taken, now.to_s)
     1
   end
 

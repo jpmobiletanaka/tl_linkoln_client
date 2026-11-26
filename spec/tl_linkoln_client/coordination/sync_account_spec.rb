@@ -79,20 +79,41 @@ RSpec.describe TlLinkolnClient::Coordination::SyncAccount do
     end
   end
 
-  describe '.extend and .release' do
-    it 'extends only for its owner and never re-creates an expired hold' do
+  describe '.last_taken_at' do
+    it 'is nil until a slot is taken' do
+      expect(described_class.last_taken_at).to be_nil
+    end
+
+    it 'moves forward when a slot is taken, and not when the attempt is refused' do
       described_class.acquire(system_id: system_id, user_id: user_id, owner: owner, limit: limit)
-      expect(described_class.extend(system_id: system_id, user_id: user_id, owner: 'metro')).to eq(false)
+      first = described_class.last_taken_at
+      expect(first).to be_within(1).of(Time.at(redis.now_ms / 1000.0))
+
+      redis.now_ms += 60_000
+      expect(described_class.acquire(system_id: system_id, user_id: user_id, owner: owner, limit: limit))
+        .to eq(:already)
+      expect(described_class.last_taken_at).to eq(first)
+
+      expect(described_class.acquire(system_id: system_id, user_id: "#{user_id}-2", owner: 'other', limit: limit))
+        .to eq(:ok)
+      expect(described_class.last_taken_at).to be > first
+    end
+  end
+
+  describe '.renew and .release' do
+    it 'renews only for its owner and never re-creates an expired hold' do
+      described_class.acquire(system_id: system_id, user_id: user_id, owner: owner, limit: limit)
+      expect(described_class.renew(system_id: system_id, user_id: user_id, owner: 'metro')).to eq(false)
 
       redis.now_ms += described_class::TTL_MS / 2
-      expect(described_class.extend(system_id: system_id, user_id: user_id, owner: owner)).to eq(true)
+      expect(described_class.renew(system_id: system_id, user_id: user_id, owner: owner)).to eq(true)
 
       redis.now_ms += described_class::TTL_MS / 2 + 1 # past the original ttl, inside the extended one
       expect(described_class.acquire(system_id: system_id, user_id: user_id, owner: 'metro', limit: limit))
         .to eq(:already)
 
       redis.now_ms += described_class::TTL_MS / 2 # the extended ttl expired too
-      expect(described_class.extend(system_id: system_id, user_id: user_id, owner: owner)).to eq(false)
+      expect(described_class.renew(system_id: system_id, user_id: user_id, owner: owner)).to eq(false)
       expect(described_class.acquire(system_id: system_id, user_id: user_id, owner: 'metro', limit: limit))
         .to eq(:ok)
     end

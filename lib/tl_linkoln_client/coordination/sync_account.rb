@@ -21,12 +21,14 @@ module TlLinkolnClient
       TTL_MS = 600_000 # 10 minutes per step; reset on every Guard#assert_locked!
 
       # How many TL logins may sync at the same time across all apps. One value for everyone, so apps cannot
-      # disagree. Today: 3 replicas x 5 sync processes in production.
-      MAX_PARALLEL = 15
+      # disagree. Today in revenue: 15 processes of the TL sync queue (3 replicas x 5) plus 1 process of the
+      # manual queue, so a manual sync always finds a free slot.
+      MAX_PARALLEL = 16
 
       # Both keys share the hash tag {tl:sync}, so the scripts are valid on Redis Cluster too.
       SLOTS_KEY = 'tl:{sync}:slots'   # ZSET: login => expires_at. Its size is the number of busy slots.
       OWNERS_KEY = 'tl:{sync}:owners' # HASH: login => owner
+      LAST_TAKEN_KEY = 'tl:{sync}:last_taken' # string: ms timestamp of the last slot taken by any app
 
       # Raised by .with_lock when another owner holds the login.
       class AlreadyLocked < StandardError; end
@@ -47,11 +49,13 @@ module TlLinkolnClient
       LUA
 
       # ARGV: now, expires_at, limit, login, owner. Returns 1 (taken), 0 (login held), -1 (no free slot).
+      # A taken slot also stamps LAST_TAKEN_KEY with `now`, so every app can see that the queue is moving.
       ACQUIRE_SCRIPT = (PURGE + <<~LUA).freeze
         if redis.call('HEXISTS', KEYS[2], ARGV[4]) == 1 then return 0 end
         if redis.call('ZCARD', KEYS[1]) >= tonumber(ARGV[3]) then return -1 end
         redis.call('HSET', KEYS[2], ARGV[4], ARGV[5])
         redis.call('ZADD', KEYS[1], ARGV[2], ARGV[4])
+        redis.call('SET', KEYS[3], ARGV[1])
         return 1
       LUA
 
@@ -103,7 +107,7 @@ module TlLinkolnClient
           # Lease.new (not Lease.start): explicit renewals only, no background thread.
           # Infinite deadline: the hold is lost only when a renewal is refused or raises.
           lease = Lease.new(max_duration: Float::INFINITY) do
-            extend(system_id: system_id, user_id: user_id, owner: owner, ttl_ms: ttl_ms)
+            renew(system_id: system_id, user_id: user_id, owner: owner, ttl_ms: ttl_ms)
           end
           begin
             yield Guard.new(lease)
@@ -121,7 +125,7 @@ module TlLinkolnClient
           now = now_ms
           result = eval_script(
             ACQUIRE_SCRIPT,
-            keys: [SLOTS_KEY, OWNERS_KEY],
+            keys: [SLOTS_KEY, OWNERS_KEY, LAST_TAKEN_KEY],
             argv: [now, now + ttl_ms.to_i, limit.to_i, login_id(system_id, user_id), owner]
           )
           case result.to_i
@@ -131,8 +135,18 @@ module TlLinkolnClient
           end
         end
 
-        # Note: this overrides Module#extend on this class. Use it with keyword arguments only.
-        def extend(system_id:, user_id:, owner:, ttl_ms: TTL_MS)
+        # When a slot was last taken by any app (revenue or metro-trail), as a Time. Nil when no slot has been
+        # taken since LAST_TAKEN_KEY was introduced. Only refused attempts do not move it.
+        def last_taken_at
+          value = redis_client.get(LAST_TAKEN_KEY)
+          return nil if value.nil?
+
+          Time.at(value.to_i / 1000.0)
+        end
+
+        # Moves the expiry of the hold forward. False when the hold is not ours any more (expired or taken over);
+        # an expired hold is not re-created.
+        def renew(system_id:, user_id:, owner:, ttl_ms: TTL_MS)
           require_owner!(owner)
           require_positive_ttl!(ttl_ms)
 
